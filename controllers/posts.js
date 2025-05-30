@@ -30,8 +30,8 @@ module.exports = {
   createPost: async (req, res) => {
     try {
       // Validate request
-      if (!req.file) {
-        console.log("No file uploaded");
+      if (!req.files || !req.files.frontImage || !req.files.backImage) {
+        console.log("Missing required images");
         return res.redirect("/profile");
       }
 
@@ -40,21 +40,21 @@ module.exports = {
         return res.redirect("/profile");
       }
 
-      // Log the file path being uploaded
-      console.log(`Uploading image from path: ${req.file.path}`);
-      console.log(`File details:`, req.file);
+      // Upload front image to cloudinary
+      const frontResult = await cloudinary.uploader.upload(req.files.frontImage[0].path);
+      console.log("Front image uploaded:", frontResult);
 
-      // Upload image to cloudinary
-      const result = await cloudinary.uploader.upload(req.file.path);
-
-      // Log the result from Cloudinary
-      console.log(`Cloudinary upload result: ${JSON.stringify(result)}`);
+      // Upload back image to cloudinary
+      const backResult = await cloudinary.uploader.upload(req.files.backImage[0].path);
+      console.log("Back image uploaded:", backResult);
 
       // Create the post
       const post = await Post.create({
         title: req.body.title,
-        image: result.secure_url,
-        cloudinaryId: result.public_id,
+        frontImage: frontResult.secure_url,
+        frontImageCloudinaryId: frontResult.public_id,
+        backImage: backResult.secure_url,
+        backImageCloudinaryId: backResult.public_id,
         caption: req.body.caption,
         likes: 0,
         tags: req.body.tags ? req.body.tags.split(',').map(tag => tag.trim()) : [],
@@ -68,7 +68,6 @@ module.exports = {
       return res.redirect("/profile");
     }
   },
-
   likePost: async (req, res) => {
     try {
       await Post.findOneAndUpdate(
@@ -93,9 +92,9 @@ module.exports = {
       }
       console.log(`Post found: ${post}`);
 
-      // Delete image from cloudinary
-      console.log(`Deleting image with cloudinaryId: ${post.cloudinaryId}`);
-      await cloudinary.uploader.destroy(post.cloudinaryId);
+      // Delete both images from cloudinary
+      await cloudinary.uploader.destroy(post.frontImageCloudinaryId);
+      await cloudinary.uploader.destroy(post.backImageCloudinaryId);
 
       // Delete post from db
       console.log(`Deleting post with id: ${req.params.id}`);

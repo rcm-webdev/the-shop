@@ -1,65 +1,72 @@
 <%- include('partials/header') -%>
-<div class="container">
-  <div class="row justify-content-center mt-5">
-    <div class="col-12">
-      <h2><%= post.title %></h2>
-      <div class="row">
-        <div class="col-md-6">
-          <div class="card mb-4">
-            <img class="card-img-top img-fluid" src="<%= post.frontImage%>" alt="Front view" />
-            <div class="card-body">
-              <h5 class="card-title">Front View</h5>
-            </div>
-          </div>
-        </div>
-        <div class="col-md-6">
-          <div class="card mb-4">
-            <img class="card-img-top img-fluid" src="<%= post.backImage%>" alt="Back view" />
-            <div class="card-body">
-              <h5 class="card-title">Back View</h5>
-              <p class="card-text"><small class="text-muted">This image will be used for AI processing</small></p>
-            </div>
-          </div>
+<div class="max-w-5xl mx-auto px-4 py-8">
+  <div class="bg-base-100 rounded-xl shadow-lg p-6">
+    <h2 class="text-2xl font-bold mb-6"><%= post.title %></h2>
+    
+    <div class="grid md:grid-cols-2 gap-6">
+      <!-- Front Image -->
+      <div class="card bg-base-200">
+        <figure class="aspect-square">
+          <img class="w-full h-full object-contain" src="<%= post.frontImage%>" alt="Front view" />
+        </figure>
+        <div class="card-body p-4">
+          <h3 class="card-title text-lg">Front View</h3>
         </div>
       </div>
-      <div class="row mt-3">
-        <div class="col-12">
-          <div class="d-flex justify-content-between align-items-center">
-            <div>
-              <form class="d-inline" action="/post/likePost/<%= post.id %>?_method=PUT" method="POST">
-                <button class="btn btn-primary" type="submit">
-                  <i class="fa fa-heart"></i> Like (<%= post.likes %>)
-                </button>
-              </form>
-              <%if(post.user == user.id){ %>
-                <form class="d-inline" action="/post/deletePost/<%= post.id %>?_method=DELETE" method="POST">
-                  <button class="btn btn-danger" type="submit">
-                    <i class="fa fa-trash"></i> Delete
-                  </button>
-                </form>
-              <%}%>
-            </div>
-          </div>
-          <div class="mt-4">
-            <h4>Description</h4>
-            <p><%= post.caption %></p>
-          </div>
-          <% if (post.tags && post.tags.length > 0) { %>
-            <div class="mt-3">
-              <h4>Tags</h4>
-              <div class="d-flex flex-wrap gap-2">
-                <% post.tags.forEach(function(tag) { %>
-                  <a href="/feed?tag=<%= tag %>" class="badge bg-secondary text-decoration-none"><%= tag %></a>
-                <% }); %>
-              </div>
-            </div>
-          <% } %>
+
+      <!-- Back Image -->
+      <div class="card bg-base-200">
+        <figure class="aspect-square">
+          <img class="w-full h-full object-contain" src="<%= post.backImage%>" alt="Back view" />
+        </figure>
+        <div class="card-body p-4">
+          <h3 class="card-title text-lg">Back View</h3>
+          <p class="text-sm text-gray-500">Used for AI processing</p>
         </div>
       </div>
     </div>
-    <div class="col-6 mt-5">
-      <a class="btn btn-primary" href="/profile">Return to Profile</a>
-      <a class="btn btn-primary" href="/feed">Return to Feed</a>
+
+    <!-- Actions and Info -->
+    <div class="mt-6 space-y-4">
+      <div class="flex flex-wrap items-center gap-4">
+        <form class="inline-block" action="/post/likePost/<%= post.id %>?_method=PUT" method="POST">
+          <button class="btn btn-primary gap-2" type="submit">
+            <i class="fa fa-heart"></i> Like (<%= post.likes %>)
+          </button>
+        </form>
+        
+        <%if(post.user == user.id){ %>
+          <form class="inline-block" action="/post/deletePost/<%= post.id %>?_method=DELETE" method="POST">
+            <button class="btn btn-error gap-2" type="submit">
+              <i class="fa fa-trash"></i> Delete
+            </button>
+          </form>
+        <%}%>
+      </div>
+
+      <!-- Description -->
+      <div class="bg-base-200 rounded-lg p-4">
+        <h4 class="font-bold mb-2">Description</h4>
+        <p class="text-gray-700"><%= post.caption %></p>
+      </div>
+
+      <!-- Tags -->
+      <% if (post.tags && post.tags.length > 0) { %>
+        <div class="bg-base-200 rounded-lg p-4">
+          <h4 class="font-bold mb-2">Tags</h4>
+          <div class="flex flex-wrap gap-2">
+            <% post.tags.forEach(function(tag) { %>
+              <a href="/feed?tag=<%= tag %>" class="badge badge-secondary hover:badge-primary transition-colors"><%= tag %></a>
+            <% }); %>
+          </div>
+        </div>
+      <% } %>
+    </div>
+
+    <!-- Navigation -->
+    <div class="flex flex-wrap justify-center gap-4 mt-8">
+      <a class="btn btn-outline" href="/profile">Return to Profile</a>
+      <a class="btn btn-outline" href="/feed">Return to Feed</a>
     </div>
   </div>
 </div>

@@ -1,10 +1,11 @@
 {
-  "name": "binary-upload-boom",
+  "name": "the-shop",
   "version": "1.0.0",
-  "description": "100Devs Social Network",
+  "description": "the shop collection",
   "main": "server.js",
   "scripts": {
     "start": "nodemon server.js",
+    "build:css": "tailwindcss -i ./public/css/input.css -o ./public/css/output.css --watch",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "",
@@ -13,6 +14,7 @@
     "bcrypt": "^5.0.1",
     "cloudinary": "^2.5.1",
     "connect-mongo": "^5.1.0",
+    "daisyui": "^4.7.2",
     "dotenv": "^16.4.7",
     "ejs": "^3.1.6",
     "express": "^4.17.1",
@@ -27,5 +29,8 @@
     "passport": "^0.7.0",
     "passport-local": "^1.0.0",
     "validator": "^13.6.0"
+  },
+  "devDependencies": {
+    "tailwindcss": "^3.4.1"
   }
 }

@@ -41,12 +41,19 @@ module.exports = {
       }
 
       // Upload front image to cloudinary
-      const frontResult = await cloudinary.uploader.upload(req.files.frontImage[0].path);
+      const frontResult = await cloudinary.uploader.upload(
+        `data:${req.files.frontImage[0].mimetype};base64,${req.files.frontImage[0].buffer.toString('base64')}`
+      );
       console.log("Front image uploaded:", frontResult);
 
       // Upload back image to cloudinary
-      const backResult = await cloudinary.uploader.upload(req.files.backImage[0].path);
+      const backResult = await cloudinary.uploader.upload(
+        `data:${req.files.backImage[0].mimetype};base64,${req.files.backImage[0].buffer.toString('base64')}`
+      );
       console.log("Back image uploaded:", backResult);
+
+      // Process tags if provided
+      let tags = req.body.tags ? req.body.tags.split(',').map(tag => tag.trim()) : [];
 
       // Create the post
       const post = await Post.create({
@@ -56,8 +63,7 @@ module.exports = {
         backImage: backResult.secure_url,
         backImageCloudinaryId: backResult.public_id,
         caption: req.body.caption,
-        likes: 0,
-        tags: req.body.tags ? req.body.tags.split(',').map(tag => tag.trim()) : [],
+        tags: tags,
         user: req.user.id,
       });
 
@@ -66,20 +72,6 @@ module.exports = {
     } catch (err) {
       console.log(`Error creating post: ${err}`);
       return res.redirect("/profile");
-    }
-  },
-  likePost: async (req, res) => {
-    try {
-      await Post.findOneAndUpdate(
-        { _id: req.params.id },
-        {
-          $inc: { likes: 1 },
-        }
-      );
-      console.log("Likes +1");
-      res.redirect(`/post/${req.params.id}`);
-    } catch (err) {
-      console.log(err);
     }
   },
   deletePost: async (req, res) => {
@@ -106,4 +98,32 @@ module.exports = {
       res.redirect("/profile");
     }
   },
+  updatePost: async (req, res) => {
+    try {
+      // Validate request
+      if (!req.body.title || !req.body.caption) {
+        console.log("Missing required fields");
+        return res.redirect(`/post/${req.params.id}`);
+      }
+
+      // Process tags if provided
+      let tags = req.body.tags ? req.body.tags.split(',').map(tag => tag.trim()) : [];
+
+      // Update the post
+      await Post.findOneAndUpdate(
+        { _id: req.params.id },
+        {
+          title: req.body.title,
+          caption: req.body.caption,
+          tags: tags,
+        }
+      );
+
+      console.log("Post has been updated");
+      res.redirect(`/post/${req.params.id}`);
+    } catch (err) {
+      console.log(err);
+      res.redirect(`/post/${req.params.id}`);
+    }
+  }
 };

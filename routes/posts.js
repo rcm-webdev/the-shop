@@ -12,7 +12,9 @@ router.post("/createPost", upload.fields([
   { name: 'backImage', maxCount: 1 }
 ]), postsController.createPost);
 
-router.put("/likePost/:id", ensureAuth, postsController.likePost);
+// Handle both POST and PUT for updatePost
+router.post("/updatePost/:id", ensureAuth, postsController.updatePost);
+router.put("/updatePost/:id", ensureAuth, postsController.updatePost);
 
 router.delete("/deletePost/:id", ensureAuth, postsController.deletePost);
 

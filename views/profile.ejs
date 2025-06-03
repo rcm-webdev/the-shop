@@ -57,7 +57,6 @@
                   </div>
                 </div>
               </div>
-              <p class="text-xs text-gray-500 mt-2">Back view will be used for AI processing</p>
             </div>
 
             <div>
@@ -86,7 +85,7 @@
             <div class="card bg-base-100 shadow-sm hover:shadow-md transition-shadow">
               <a href="/post/<%= posts[i]._id%>" class="block">
                 <figure class="aspect-square">
-                  <img class="w-full h-full object-cover" src="<%= posts[i].frontImage%>" alt="Front view">
+                  <img class="w-full h-full object-cover" src="<%= posts[i].image%>" alt="Item image">
                 </figure>
                 <div class="card-body p-2">
                   <h3 class="card-title text-sm font-medium line-clamp-1"><%= posts[i].title %></h3>
@@ -129,12 +128,11 @@
     }
   }
 
-  // Set up front image handling
+  // Set up image handling
   document.getElementById('frontImage').addEventListener('change', function() {
     handleImageUpload(this, 'frontImagePreview', 'frontImageDropZone');
   });
 
-  // Set up back image handling
   document.getElementById('backImage').addEventListener('change', function() {
     handleImageUpload(this, 'backImagePreview', 'backImageDropZone');
   });

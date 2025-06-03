@@ -49,6 +49,7 @@ module.exports = {
 
       // Process tags if provided
       let tags = req.body.tags ? req.body.tags.split(',').map(tag => tag.trim()) : [];
+      let wheelVariations = req.body.wheelVariations ? req.body.wheelVariations.split(',').map(v => v.trim()) : [];
 
       // Create the post
       const post = await Post.create({
@@ -59,6 +60,13 @@ module.exports = {
         backImageCloudinaryId: backResult.public_id,
         caption: req.body.caption || '',
         tags: tags,
+        wheelVariations: wheelVariations,
+        toyNumber: req.body.toyNumber || '',
+        year: req.body.year || null,
+        series: req.body.series || '',
+        condition: req.body.condition || '',
+        isSold: req.body.isSold === 'on',
+        boxNumber: req.body.boxNumber || '',
         user: req.user.id,
       });
 
@@ -101,8 +109,9 @@ module.exports = {
         return res.redirect(`/post/${req.params.id}`);
       }
 
-      // Process tags if provided
+      // Process tags and wheel variations if provided
       let tags = req.body.tags ? req.body.tags.split(',').map(tag => tag.trim()) : [];
+      let wheelVariations = req.body.wheelVariations ? req.body.wheelVariations.split(',').map(v => v.trim()) : [];
 
       // Update the post
       await Post.findOneAndUpdate(
@@ -111,6 +120,13 @@ module.exports = {
           title: req.body.title,
           caption: req.body.caption,
           tags: tags,
+          wheelVariations: wheelVariations,
+          toyNumber: req.body.toyNumber || '',
+          year: req.body.year || null,
+          series: req.body.series || '',
+          condition: req.body.condition || '',
+          isSold: req.body.isSold === 'on',
+          boxNumber: req.body.boxNumber || '',
         }
       );
 

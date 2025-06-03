@@ -18,13 +18,26 @@
                 </figure>
                 <div class="card-body p-3">
                   <h5 class="card-title text-sm font-medium line-clamp-1"><%= posts[i].title %></h5>
-                  <% if (posts[i].tags && posts[i].tags.length > 0) { %>
-                    <div class="flex flex-wrap gap-1 mt-1">
-                      <% posts[i].tags.forEach(function(tag) { %>
-                        <a href="/feed?tag=<%= tag %>" class="badge badge-sm badge-secondary hover:badge-primary transition-colors text-xs"><%= tag %></a>
-                      <% }); %>
-                    </div>
-                  <% } %>
+                  <div class="flex flex-col gap-1">
+                    <% if (posts[i].toyNumber || posts[i].year) { %>
+                      <p class="text-xs text-gray-600">
+                        <%= posts[i].toyNumber %> <%= posts[i].year ? `(${posts[i].year})` : '' %>
+                      </p>
+                    <% } %>
+                    <% if (posts[i].condition) { %>
+                      <p class="text-xs text-gray-600"><%= posts[i].condition %></p>
+                    <% } %>
+                    <% if (posts[i].isSold) { %>
+                      <span class="badge badge-sm badge-error">Sold</span>
+                    <% } %>
+                    <% if (posts[i].tags && posts[i].tags.length > 0) { %>
+                      <div class="flex flex-wrap gap-1 mt-1">
+                        <% posts[i].tags.forEach(function(tag) { %>
+                          <a href="/feed?tag=<%= tag %>" class="badge badge-sm badge-secondary hover:badge-primary transition-colors text-xs"><%= tag %></a>
+                        <% }); %>
+                      </div>
+                    <% } %>
+                  </div>
                 </div>
               </div>
             </a>

@@ -61,7 +61,58 @@
                 <label class="block text-sm font-medium mb-1" for="tags">Tags (comma-separated)</label>
                 <input type="text" id="tags" name="tags" value="<%= post.tags.join(', ') %>" class="input input-bordered w-full">
               </div>
-              
+
+              <div>
+                <label class="block text-sm font-medium mb-1" for="wheelVariations">Wheel Variations (comma-separated)</label>
+                <input type="text" id="wheelVariations" name="wheelVariations" value="<%= post.wheelVariations.join(', ') %>" class="input input-bordered w-full">
+              </div>
+
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label class="block text-sm font-medium mb-1" for="toyNumber">Toy Number</label>
+                  <input type="text" id="toyNumber" name="toyNumber" value="<%= post.toyNumber %>" class="input input-bordered w-full">
+                </div>
+
+                <div>
+                  <label class="block text-sm font-medium mb-1" for="year">Year</label>
+                  <input type="number" id="year" name="year" value="<%= post.year %>" class="input input-bordered w-full">
+                </div>
+              </div>
+
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label class="block text-sm font-medium mb-1" for="series">Series</label>
+                  <input type="text" id="series" name="series" value="<%= post.series %>" class="input input-bordered w-full">
+                </div>
+
+                <div>
+                  <label class="block text-sm font-medium mb-1" for="condition">Condition</label>
+                  <select class="select select-bordered w-full" id="condition" name="condition">
+                    <option value="" <%= !post.condition ? 'selected' : '' %>>Select condition</option>
+                    <option value="Mint" <%= post.condition === 'Mint' ? 'selected' : '' %>>Mint</option>
+                    <option value="Near Mint" <%= post.condition === 'Near Mint' ? 'selected' : '' %>>Near Mint</option>
+                    <option value="Excellent" <%= post.condition === 'Excellent' ? 'selected' : '' %>>Excellent</option>
+                    <option value="Good" <%= post.condition === 'Good' ? 'selected' : '' %>>Good</option>
+                    <option value="Fair" <%= post.condition === 'Fair' ? 'selected' : '' %>>Fair</option>
+                    <option value="Poor" <%= post.condition === 'Poor' ? 'selected' : '' %>>Poor</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label class="block text-sm font-medium mb-1" for="boxNumber">Box/Storage Number</label>
+                  <input type="text" id="boxNumber" name="boxNumber" value="<%= post.boxNumber %>" class="input input-bordered w-full">
+                </div>
+
+                <div class="flex items-center mt-6">
+                  <label class="label cursor-pointer">
+                    <span class="label-text mr-2">Item is Sold</span>
+                    <input type="checkbox" class="checkbox" id="isSold" name="isSold" <%= post.isSold ? 'checked' : '' %>>
+                  </label>
+                </div>
+              </div>
+
               <div class="flex justify-end gap-2">
                 <button type="button" class="btn btn-ghost" onclick="toggleEditForm()">Cancel</button>
                 <button type="submit" class="btn btn-primary">Save Changes</button>
@@ -76,6 +127,66 @@
         <h4 class="font-bold mb-2">Description</h4>
         <p class="text-gray-700"><%= post.caption %></p>
       </div>
+
+      <!-- Item Details -->
+      <div class="bg-base-200 rounded-lg p-4">
+        <h4 class="font-bold mb-2">Item Details</h4>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <% if (post.toyNumber) { %>
+            <div>
+              <span class="font-medium">Toy Number:</span>
+              <span class="ml-2"><%= post.toyNumber %></span>
+            </div>
+          <% } %>
+          
+          <% if (post.year) { %>
+            <div>
+              <span class="font-medium">Year:</span>
+              <span class="ml-2"><%= post.year %></span>
+            </div>
+          <% } %>
+          
+          <% if (post.series) { %>
+            <div>
+              <span class="font-medium">Series:</span>
+              <span class="ml-2"><%= post.series %></span>
+            </div>
+          <% } %>
+          
+          <% if (post.condition) { %>
+            <div>
+              <span class="font-medium">Condition:</span>
+              <span class="ml-2"><%= post.condition %></span>
+            </div>
+          <% } %>
+          
+          <% if (post.boxNumber) { %>
+            <div>
+              <span class="font-medium">Storage Location:</span>
+              <span class="ml-2"><%= post.boxNumber %></span>
+            </div>
+          <% } %>
+          
+          <div>
+            <span class="font-medium">Status:</span>
+            <span class="ml-2 <%= post.isSold ? 'text-error' : 'text-success' %>">
+              <%= post.isSold ? 'Sold' : 'Available' %>
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Wheel Variations -->
+      <% if (post.wheelVariations && post.wheelVariations.length > 0) { %>
+        <div class="bg-base-200 rounded-lg p-4">
+          <h4 class="font-bold mb-2">Wheel Variations</h4>
+          <div class="flex flex-wrap gap-2">
+            <% post.wheelVariations.forEach(function(variation) { %>
+              <span class="badge badge-primary"><%= variation %></span>
+            <% }); %>
+          </div>
+        </div>
+      <% } %>
 
       <!-- Tags -->
       <% if (post.tags && post.tags.length > 0) { %>

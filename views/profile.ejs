@@ -66,6 +66,63 @@
               <p class="text-xs text-gray-500 mt-1">Separate tags with commas</p>
             </div>
 
+            <div>
+              <label for="wheelVariations" class="block text-sm font-medium mb-1">Wheel Variations</label>
+              <input type="text" class="input input-bordered w-full" id="wheelVariations" name="wheelVariations" 
+                     placeholder="e.g. 5SP, Gold 3SP">
+              <p class="text-xs text-gray-500 mt-1">Separate variations with commas</p>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label for="toyNumber" class="block text-sm font-medium mb-1">Toy Number</label>
+                <input type="text" class="input input-bordered w-full" id="toyNumber" name="toyNumber" 
+                       placeholder="e.g. HW123">
+              </div>
+
+              <div>
+                <label for="year" class="block text-sm font-medium mb-1">Year</label>
+                <input type="number" class="input input-bordered w-full" id="year" name="year" 
+                       placeholder="e.g. 1995">
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label for="series" class="block text-sm font-medium mb-1">Series</label>
+                <input type="text" class="input input-bordered w-full" id="series" name="series" 
+                       placeholder="e.g. Treasure Hunt">
+              </div>
+
+              <div>
+                <label for="condition" class="block text-sm font-medium mb-1">Condition</label>
+                <select class="select select-bordered w-full" id="condition" name="condition">
+                  <option value="">Select condition</option>
+                  <option value="Mint">Mint</option>
+                  <option value="Near Mint">Near Mint</option>
+                  <option value="Excellent">Excellent</option>
+                  <option value="Good">Good</option>
+                  <option value="Fair">Fair</option>
+                  <option value="Poor">Poor</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label for="boxNumber" class="block text-sm font-medium mb-1">Box/Storage Number</label>
+                <input type="text" class="input input-bordered w-full" id="boxNumber" name="boxNumber" 
+                       placeholder="e.g. Box A, Bin 3">
+              </div>
+
+              <div class="flex items-center mt-6">
+                <label class="label cursor-pointer">
+                  <span class="label-text mr-2">Item is Sold</span>
+                  <input type="checkbox" class="checkbox" id="isSold" name="isSold">
+                </label>
+              </div>
+            </div>
+
             <button type="submit" class="btn btn-primary w-full">Add to Collection</button>
           </form>
         </div>

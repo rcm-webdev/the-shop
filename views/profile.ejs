@@ -3,7 +3,7 @@
   <div class="flex flex-col lg:flex-row gap-6">
     <!-- User Info and Form Section -->
     <div class="w-full lg:w-2/5">
-      <div class="bg-base-200 rounded-lg shadow-md">
+      <div class="bg-base-200 rounded-lg shadow-md h-full">
         <!-- User Info -->
         <div class="p-6 text-center border-b border-base-300">
           <div class="avatar placeholder mb-4">
@@ -22,12 +22,12 @@
           <form action="/post/createPost" enctype="multipart/form-data" method="POST" class="space-y-4">
             <div>
               <label for="title" class="block text-sm font-medium mb-1">Title</label>
-              <input type="text" class="input input-bordered w-full" id="title" name="title" >
+              <input type="text" class="input input-bordered w-full" id="title" name="title" required>
             </div>
             
             <div>
               <label for="caption" class="block text-sm font-medium mb-1">Description</label>
-              <textarea class="textarea textarea-bordered w-full h-24" id="caption" name="caption" ></textarea>
+              <textarea class="textarea textarea-bordered w-full h-24" id="caption" name="caption" required ></textarea>
             </div>
 
             <div>
@@ -74,35 +74,37 @@
 
     <!-- Collection Grid Section -->
     <div class="w-full lg:w-3/5">
-      <div class="bg-base-200 rounded-lg shadow-md p-6">
+      <div class="bg-base-200 rounded-lg shadow-md p-6 h-full flex flex-col">
         <div class="flex justify-between items-center mb-6">
-          <h2 class="text-lg font-bold">Your Collection</h2>
-          <a href="/feed" class="btn btn-ghost btn-sm">View All</a>
+          <h2 class="text-lg font-bold ">Your Collection</h2>
+          <a href="/feed" class="btn btn-ghost btn-sm ">View All</a>
         </div>
         
-        <div class="grid grid-cols-2 sm:grid-cols-3 gap-4">
-          <% for(var i=0; i<posts.length; i++) {%>
-            <div class="card bg-base-100 shadow-sm hover:shadow-md transition-shadow">
-              <a href="/post/<%= posts[i]._id%>" class="block">
-                <figure class="aspect-square">
-                  <img class="w-full h-full object-cover" src="<%= posts[i].image%>" alt="Item image">
-                </figure>
-                <div class="card-body p-2">
-                  <h3 class="card-title text-sm font-medium line-clamp-1"><%= posts[i].title %></h3>
-                  <% if (posts[i].tags && posts[i].tags.length > 0) { %>
-                    <div class="flex flex-wrap gap-1">
-                      <% posts[i].tags.slice(0, 2).forEach(function(tag) { %>
-                        <a href="/feed?tag=<%= tag %>" class="badge badge-sm badge-secondary hover:badge-primary transition-colors text-xs"><%= tag %></a>
-                      <% }); %>
-                      <% if (posts[i].tags.length > 2) { %>
-                        <span class="badge badge-sm badge-ghost text-xs">+<%= posts[i].tags.length - 2 %></span>
-                      <% } %>
-                    </div>
-                  <% } %>
-                </div>
-              </a>
-            </div>
-          <% } %>
+        <div class="flex-1">
+          <div class="grid grid-cols-2 sm:grid-cols-3 gap-4">
+            <% for(let i=0; i<posts.length; i++) {%>
+              <div class="card bg-base-100 shadow-sm hover:shadow-md transition-shadow">
+                <a href="/post/<%= posts[i]._id%>" class="block">
+                  <figure class="aspect-square">
+                    <img class="w-full h-full object-cover" src="<%= posts[i].frontImage%>" alt="Item image">
+                  </figure>
+                  <div class="card-body p-2">
+                    <h3 class="card-title text-sm font-medium line-clamp-1 "><%= posts[i].title %></h3>
+                    <% if (posts[i].tags && posts[i].tags.length > 0) { %>
+                      <div class="flex flex-wrap gap-1">
+                        <% posts[i].tags.slice(0, 2).forEach(function(tag) { %>
+                          <a href="/feed?tag=<%= tag %>" class="badge badge-sm badge-secondary hover:badge-primary transition-colors text-xs"><%= tag %></a>
+                        <% }); %>
+                        <% if (posts[i].tags.length > 2) { %>
+                          <span class="badge badge-sm badge-ghost text-xs">+<%= posts[i].tags.length - 2 %></span>
+                        <% } %>
+                      </div>
+                    <% } %>
+                  </div>
+                </a>
+              </div>
+            <% } %>
+          </div>
         </div>
       </div>
     </div>
@@ -115,16 +117,33 @@
     const uploadPrompt = document.querySelector(`#${dropZoneId} .upload-prompt`);
     const preview = document.getElementById(previewId);
     
+    if (!previewContainer || !uploadPrompt || !preview) {
+      console.error('Required elements not found:', { previewContainer, uploadPrompt, preview });
+      return;
+    }
+
     if (input.files && input.files[0]) {
       const reader = new FileReader();
       
       reader.onload = function(e) {
-        preview.src = e.target.result;
-        previewContainer.classList.remove('hidden');
-        uploadPrompt.classList.add('hidden');
+        if (e.target && e.target.result) {
+          preview.src = e.target.result;
+          preview.style.display = 'block'; // Ensure image is visible
+          previewContainer.classList.remove('hidden');
+          uploadPrompt.classList.add('hidden');
+          console.log('Preview updated successfully:', previewId);
+        } else {
+          console.error('Failed to load image data');
+        }
+      }
+      
+      reader.onerror = function(error) {
+        console.error('Error reading file:', error);
       }
       
       reader.readAsDataURL(input.files[0]);
+    } else {
+      console.log('No file selected');
     }
   }
 

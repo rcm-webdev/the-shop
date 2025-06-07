@@ -23,6 +23,6 @@
 ## 🕰️ Legacy System Reference
 
 Original development for this project began in a separate repository:  
-🔗 [Legacy Repo – the_shop_inventory](https://github.com/ikeyike/the-shop-inventory-system)
+🔗 [Legacy Repo – the-shop-inventory-system](https://github.com/ikeyike/the-shop-inventory-system)
 
 It includes early versions of automation scripts and workflow logic that have since been migrated and improved in this version.

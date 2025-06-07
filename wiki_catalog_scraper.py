@@ -3,7 +3,7 @@ import requests
 import gspread
 import csv
 from bs4 import BeautifulSoup
-from oauth2client.service_account import ServiceAccountCredentials
+from google.oauth2.service_account import Credentials
 from urllib.parse import quote
 from difflib import SequenceMatcher, get_close_matches
 import time
@@ -110,8 +110,8 @@ def get_wiki_versions(toy_number, model, brand, year):
     return None, url
 
 def main():
-    scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
-    creds = ServiceAccountCredentials.from_json_keyfile_name("credentials.json", scope)
+    scope = ["https://www.googleapis.com/auth/spreadsheets", "https://www.googleapis.com/auth/drive"]
+    creds = Credentials.from_service_account_file("credentials.json", scopes=scope)
     client = gspread.authorize(creds)
     sheet = client.open(GOOGLE_SHEET_NAME).worksheet(SHEET_TAB_NAME)
 

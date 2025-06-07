@@ -1,4 +1,3 @@
-
 import requests
 import base64
 import gspread
@@ -53,11 +52,11 @@ def get_ebay_access_token():
 # === STEP 2: Authenticate with Google Sheets ===
 
 def authorize_google_sheet():
-    scope = [
+    scopes = [
         "https://www.googleapis.com/auth/spreadsheets",
         "https://www.googleapis.com/auth/drive"
     ]
-    creds = Credentials.from_service_account_file(CREDENTIALS_FILE, scopes=scope)
+    creds = Credentials.from_service_account_file(CREDENTIALS_FILE, scopes=scopes)
     client = gspread.authorize(creds)
     return client.open(SPREADSHEET_NAME).worksheet(WORKSHEET_NAME)
 

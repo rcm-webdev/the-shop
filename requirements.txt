@@ -1,0 +1,22 @@
+# 🔧 Core Utilities
+requests==2.32.3
+python-dotenv==1.1.0
+
+# 🌐 Web Scraping
+beautifulsoup4==4.13.4
+
+# 📊 Google Sheets API
+gspread==6.2.0
+google-auth==2.40.1
+google-auth-oauthlib==1.2.2
+google-api-python-client==2.86.0
+
+# 🔐 eBay OAuth Support
+requests-oauthlib==2.0.0
+oauthlib==3.2.2
+
+# 🧠 Optional: Google Cloud Vision (not currently active but ready)
+google-cloud-vision==3.3.0
+
+# 🖼️ Optional: Image Processing (future compatibility)
+Pillow==9.4.0

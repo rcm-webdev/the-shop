@@ -16,115 +16,169 @@
           <a href="/logout" class="btn btn-primary btn-sm">Logout</a>
         </div>
 
-        <!-- New Item Form -->
-        <div class="p-6">
-          <h2 class="text-lg font-bold mb-4">Add New Item</h2>
-          <form action="/post/createPost" enctype="multipart/form-data" method="POST" class="space-y-4">
-            <div>
-              <label for="title" class="block text-sm font-medium mb-1">Title</label>
-              <input type="text" class="input input-bordered w-full" id="title" name="title" required>
-            </div>
+        <!-- Add Item Form Card -->
+        <div class="bg-base-200 rounded-lg shadow-md mb-6">
+          <div class="flex justify-between items-center p-6 border-b border-base-300">
+            <h2 class="text-lg font-bold">Add New Item</h2>
             
-            <div>
-              <label for="caption" class="block text-sm font-medium mb-1">Description</label>
-              <textarea class="textarea textarea-bordered w-full h-24" id="caption" name="caption" required ></textarea>
+            <!-- Import Toggle Button -->
+            <div class="flex gap-2">
+              <button onclick="toggleImportForm()" class="btn btn-ghost btn-sm">
+                <i class="fas fa-file-import"></i> Import from Sheet
+              </button>
             </div>
+          </div>
 
-            <div>
-              <h3 class="text-sm font-medium mb-2">Images</h3>
-              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div class="relative border-2 border-dashed border-gray-300 rounded-lg p-4 text-center cursor-pointer hover:border-primary transition-colors" id="frontImageDropZone">
-                  <input type="file" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" id="frontImage" name="frontImage" accept="image/*" capture="filesystem" required>
-                  <div class="preview-container hidden">
-                    <img id="frontImagePreview" class="max-w-full h-auto mx-auto mb-2" src="" alt="Front preview">
-                    <p class="text-sm text-gray-500">Front View</p>
-                  </div>
-                  <div class="upload-prompt">
-                    <i class="fas fa-plus text-3xl mb-2"></i>
-                    <p class="text-sm text-gray-500">Front View</p>
+          <!-- Google Sheet Import Form -->
+          <div id="importForm" class="hidden">
+            <div class="p-6 border-b border-base-300">
+              <h2 class="text-lg font-bold mb-4">Import from Google Sheet</h2>
+              <div class="space-y-4">
+                <div class="alert alert-info shadow-lg">
+                  <div>
+                    <i class="fas fa-info-circle"></i>
+                    <span>Make sure your sheet has the following columns: Box #, Model Name, Toy #, Origin, Series, Wheel Variations</span>
                   </div>
                 </div>
                 
-                <div class="relative border-2 border-dashed border-gray-300 rounded-lg p-4 text-center cursor-pointer hover:border-primary transition-colors" id="backImageDropZone">
-                  <input type="file" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" id="backImage" name="backImage" accept="image/*" capture="filesystem" required>
-                  <div class="preview-container hidden">
-                    <img id="backImagePreview" class="max-w-full h-auto mx-auto mb-2" src="" alt="Back preview">
-                    <p class="text-sm text-gray-500">Back View</p>
-                  </div>
-                  <div class="upload-prompt">
-                    <i class="fas fa-plus text-3xl mb-2"></i>
-                    <p class="text-sm text-gray-500">Back View</p>
+                <div>
+                  <label class="block text-sm font-medium mb-1">Sheet Index (Optional)</label>
+                  <input type="number" id="sheetIndex" class="input input-bordered w-full" 
+                         placeholder="Default: 4 (App-Test-4 sheet)" min="0">
+                  <label class="label">
+                    <span class="label-text-alt">Leave empty to use App-Test-4 sheet</span>
+                  </label>
+                </div>
+
+                <button onclick="importFromSheet()" class="btn btn-primary w-full">
+                  <i class="fas fa-file-import mr-2"></i> Import Items
+                </button>
+              </div>
+
+              <!-- Import Status -->
+              <div id="importStatus" class="hidden mt-4">
+                <div class="alert shadow-lg">
+                  <div>
+                    <i class="fas fa-spinner fa-spin" id="importSpinner"></i>
+                    <i class="fas fa-check text-success hidden" id="importSuccess"></i>
+                    <i class="fas fa-times text-error hidden" id="importError"></i>
+                    <span id="importMessage">Processing...</span>
                   </div>
                 </div>
               </div>
             </div>
+          </div>
 
-            <div>
-              <label for="tags" class="block text-sm font-medium mb-1">Tags</label>
-              <input type="text" class="input input-bordered w-full" id="tags" name="tags" 
-                     placeholder="e.g. 1997, Near Mint, Redline Wheels">
-              <p class="text-xs text-gray-500 mt-1">Separate tags with commas</p>
-            </div>
-
-            <div>
-              <label for="wheelVariations" class="block text-sm font-medium mb-1">Wheel Variations</label>
-              <input type="text" class="input input-bordered w-full" id="wheelVariations" name="wheelVariations" 
-                     placeholder="e.g. 5SP, Gold 3SP">
-              <p class="text-xs text-gray-500 mt-1">Separate variations with commas</p>
-            </div>
-
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <!-- Existing Add Item Form -->
+          <div id="addItemForm" class="p-6">
+            <h2 class="text-lg font-bold mb-4">Add New Item</h2>
+            <form action="/post/createPost" enctype="multipart/form-data" method="POST" class="space-y-4">
               <div>
-                <label for="toyNumber" class="block text-sm font-medium mb-1">Toy Number</label>
-                <input type="text" class="input input-bordered w-full" id="toyNumber" name="toyNumber" 
-                       placeholder="e.g. HW123">
+                <label for="title" class="block text-sm font-medium mb-1">Title</label>
+                <input type="text" class="input input-bordered w-full" id="title" name="title" required>
+              </div>
+              
+              <div>
+                <label for="caption" class="block text-sm font-medium mb-1">Description</label>
+                <textarea class="textarea textarea-bordered w-full h-24" id="caption" name="caption" required ></textarea>
               </div>
 
               <div>
-                <label for="year" class="block text-sm font-medium mb-1">Year</label>
-                <input type="number" class="input input-bordered w-full" id="year" name="year" 
-                       placeholder="e.g. 1995" min="1">
+                <h3 class="text-sm font-medium mb-2">Images</h3>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div class="relative border-2 border-dashed border-gray-300 rounded-lg p-4 text-center cursor-pointer hover:border-primary transition-colors" id="frontImageDropZone">
+                    <input type="file" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" id="frontImage" name="frontImage" accept="image/*" capture="filesystem" required>
+                    <div class="preview-container hidden">
+                      <img id="frontImagePreview" class="max-w-full h-auto mx-auto mb-2" src="" alt="Front preview">
+                      <p class="text-sm text-gray-500">Front View</p>
+                    </div>
+                    <div class="upload-prompt">
+                      <i class="fas fa-plus text-3xl mb-2"></i>
+                      <p class="text-sm text-gray-500">Front View</p>
+                    </div>
+                  </div>
+                  
+                  <div class="relative border-2 border-dashed border-gray-300 rounded-lg p-4 text-center cursor-pointer hover:border-primary transition-colors" id="backImageDropZone">
+                    <input type="file" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" id="backImage" name="backImage" accept="image/*" capture="filesystem" required>
+                    <div class="preview-container hidden">
+                      <img id="backImagePreview" class="max-w-full h-auto mx-auto mb-2" src="" alt="Back preview">
+                      <p class="text-sm text-gray-500">Back View</p>
+                    </div>
+                    <div class="upload-prompt">
+                      <i class="fas fa-plus text-3xl mb-2"></i>
+                      <p class="text-sm text-gray-500">Back View</p>
+                    </div>
+                  </div>
+                </div>
               </div>
-            </div>
 
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label for="series" class="block text-sm font-medium mb-1">Series</label>
-                <input type="text" class="input input-bordered w-full" id="series" name="series" 
-                       placeholder="e.g. Treasure Hunt">
+                <label for="tags" class="block text-sm font-medium mb-1">Tags</label>
+                <input type="text" class="input input-bordered w-full" id="tags" name="tags" 
+                       placeholder="e.g. 1997, Near Mint, Redline Wheels">
+                <p class="text-xs text-gray-500 mt-1">Separate tags with commas</p>
               </div>
 
               <div>
-                <label for="condition" class="block text-sm font-medium mb-1">Condition</label>
-                <select class="select select-bordered w-full" id="condition" name="condition">
-                  <option value="">Select condition</option>
-                  <option value="Mint">Mint</option>
-                  <option value="Near Mint">Near Mint</option>
-                  <option value="Excellent">Excellent</option>
-                  <option value="Good">Good</option>
-                  <option value="Fair">Fair</option>
-                  <option value="Poor">Poor</option>
-                </select>
-              </div>
-            </div>
-
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label for="boxNumber" class="block text-sm font-medium mb-1">Box/Storage Number</label>
-                <input type="text" class="input input-bordered w-full" id="boxNumber" name="boxNumber" 
-                       placeholder="e.g. Box A, Bin 3">
+                <label for="wheelVariations" class="block text-sm font-medium mb-1">Wheel Variations</label>
+                <input type="text" class="input input-bordered w-full" id="wheelVariations" name="wheelVariations" 
+                       placeholder="e.g. 5SP, Gold 3SP">
+                <p class="text-xs text-gray-500 mt-1">Separate variations with commas</p>
               </div>
 
-              <div class="flex items-center mt-6">
-                <label class="label cursor-pointer">
-                  <span class="label-text mr-2">Item is Sold</span>
-                  <input type="checkbox" class="checkbox" id="isSold" name="isSold">
-                </label>
-              </div>
-            </div>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label for="toyNumber" class="block text-sm font-medium mb-1">Toy Number</label>
+                  <input type="text" class="input input-bordered w-full" id="toyNumber" name="toyNumber" 
+                         placeholder="e.g. HW123">
+                </div>
 
-            <button type="submit" class="btn btn-primary w-full">Add to Collection</button>
-          </form>
+                <div>
+                  <label for="year" class="block text-sm font-medium mb-1">Year</label>
+                  <input type="number" class="input input-bordered w-full" id="year" name="year" 
+                         placeholder="e.g. 1995" min="1">
+                </div>
+              </div>
+
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label for="series" class="block text-sm font-medium mb-1">Series</label>
+                  <input type="text" class="input input-bordered w-full" id="series" name="series" 
+                         placeholder="e.g. Treasure Hunt">
+                </div>
+
+                <div>
+                  <label for="condition" class="block text-sm font-medium mb-1">Condition</label>
+                  <select class="select select-bordered w-full" id="condition" name="condition">
+                    <option value="">Select condition</option>
+                    <option value="Mint">Mint</option>
+                    <option value="Near Mint">Near Mint</option>
+                    <option value="Excellent">Excellent</option>
+                    <option value="Good">Good</option>
+                    <option value="Fair">Fair</option>
+                    <option value="Poor">Poor</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label for="boxNumber" class="block text-sm font-medium mb-1">Box/Storage Number</label>
+                  <input type="text" class="input input-bordered w-full" id="boxNumber" name="boxNumber" 
+                         placeholder="e.g. Box A, Bin 3">
+                </div>
+
+                <div class="flex items-center mt-6">
+                  <label class="label cursor-pointer">
+                    <span class="label-text mr-2">Item is Sold</span>
+                    <input type="checkbox" class="checkbox" id="isSold" name="isSold">
+                  </label>
+                </div>
+              </div>
+
+              <button type="submit" class="btn btn-primary w-full">Add to Collection</button>
+            </form>
+          </div>
         </div>
       </div>
     </div>
@@ -167,75 +221,92 @@
     </div>
   </div>
 </div>
-<%- include('partials/footer') -%>
+
+
 <script>
-  function handleImageUpload(input, previewId, dropZoneId) {
-    const previewContainer = document.querySelector(`#${dropZoneId} .preview-container`);
-    const uploadPrompt = document.querySelector(`#${dropZoneId} .upload-prompt`);
-    const preview = document.getElementById(previewId);
+  // Toggle import form visibility
+  function toggleImportForm() {
+    const importForm = document.getElementById('importForm');
+    const addItemForm = document.getElementById('addItemForm');
     
-    if (!previewContainer || !uploadPrompt || !preview) {
-      console.error('Required elements not found:', { previewContainer, uploadPrompt, preview });
-      return;
-    }
-
-    if (input.files && input.files[0]) {
-      const reader = new FileReader();
-      
-      reader.onload = function(e) {
-        if (e.target && e.target.result) {
-          preview.src = e.target.result;
-          preview.style.display = 'block'; // Ensure image is visible
-          previewContainer.classList.remove('hidden');
-          uploadPrompt.classList.add('hidden');
-          console.log('Preview updated successfully:', previewId);
-        } else {
-          console.error('Failed to load image data');
-        }
-      }
-      
-      reader.onerror = function(error) {
-        console.error('Error reading file:', error);
-      }
-      
-      reader.readAsDataURL(input.files[0]);
+    if (importForm.classList.contains('hidden')) {
+      importForm.classList.remove('hidden');
+      addItemForm.classList.add('hidden');
     } else {
-      console.log('No file selected');
+      importForm.classList.add('hidden');
+      addItemForm.classList.remove('hidden');
     }
   }
 
-  // Set up image handling
-  document.getElementById('frontImage').addEventListener('change', function() {
-    handleImageUpload(this, 'frontImagePreview', 'frontImageDropZone');
-  });
+  // Handle the import process
+  async function importFromSheet() {
+    const sheetIndex = document.getElementById('sheetIndex').value || 4; // Default to App-Test-4 sheet
+    const importStatus = document.getElementById('importStatus');
+    const importSpinner = document.getElementById('importSpinner');
+    const importSuccess = document.getElementById('importSuccess');
+    const importError = document.getElementById('importError');
+    const importMessage = document.getElementById('importMessage');
 
-  document.getElementById('backImage').addEventListener('change', function() {
-    handleImageUpload(this, 'backImagePreview', 'backImageDropZone');
-  });
+    // Reset status
+    importStatus.classList.remove('hidden');
+    importSpinner.classList.remove('hidden');
+    importSuccess.classList.add('hidden');
+    importError.classList.add('hidden');
+    importMessage.textContent = 'Processing...';
 
-  // Prevent default drag behaviors
-  ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
-    document.getElementById('frontImageDropZone').addEventListener(eventName, preventDefaults, false);
-    document.getElementById('backImageDropZone').addEventListener(eventName, preventDefaults, false);
-  });
+    try {
+      const response = await fetch('/post/import-sheet', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
+        body: JSON.stringify({
+          sheetIndex: parseInt(sheetIndex)
+        })
+      });
 
-  function preventDefaults (e) {
-    e.preventDefault();
-    e.stopPropagation();
+      const data = await response.json();
+
+      if (response.ok) {
+        importSpinner.classList.add('hidden');
+        importSuccess.classList.remove('hidden');
+        importMessage.textContent = `Successfully imported ${data.importedCount} items!`;
+        
+        // Refresh the page after 2 seconds to show new items
+        setTimeout(() => {
+          window.location.reload();
+        }, 2000);
+      } else {
+        throw new Error(data.message || 'Import failed');
+      }
+    } catch (error) {
+      importSpinner.classList.add('hidden');
+      importError.classList.remove('hidden');
+      importMessage.textContent = error.message || 'Failed to import items. Please try again.';
+    }
   }
 
-  // Handle dropped files
-  document.getElementById('frontImageDropZone').addEventListener('drop', function(e) {
-    const dt = e.dataTransfer;
-    const files = dt.files;
-    document.getElementById('frontImage').files = files;
-    handleImageUpload(document.getElementById('frontImage'), 'frontImagePreview', 'frontImageDropZone');
-  });
+  // Initialize image preview functionality
+  document.addEventListener('DOMContentLoaded', function() {
+    ['frontImage', 'backImage'].forEach(id => {
+      const input = document.getElementById(id);
+      const preview = document.getElementById(`${id}Preview`);
+      const container = input.closest('div').querySelector('.preview-container');
+      const prompt = input.closest('div').querySelector('.upload-prompt');
 
-  document.getElementById('backImageDropZone').addEventListener('drop', function(e) {
-    const dt = e.dataTransfer;
-    const files = dt.files;
-    document.getElementById('backImage').files = files;
-    handleImageUpload(document.getElementById('backImage'), 'backImagePreview', 'backImageDropZone');
+      input.addEventListener('change', function(e) {
+        if (e.target.files && e.target.files[0]) {
+          const reader = new FileReader();
+          reader.onload = function(e) {
+            preview.src = e.target.result;
+            container.classList.remove('hidden');
+            prompt.classList.add('hidden');
+          };
+          reader.readAsDataURL(e.target.files[0]);
+        }
+      });
+    });
   });
 </script>
+<%- include('partials/footer') -%>

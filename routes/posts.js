@@ -18,4 +18,8 @@ router.put("/updatePost/:id", ensureAuth, postsController.updatePost);
 
 router.delete("/deletePost/:id", ensureAuth, postsController.deletePost);
 
+// Google Sheets import routes
+router.get("/import-sheet", ensureAuth, postsController.getImportStatus);
+router.post("/import-sheet", ensureAuth, postsController.importFromGoogleSheet);
+
 module.exports = router;

@@ -1,11 +1,16 @@
 const cloudinary = require("../middleware/cloudinary");
 const Post = require("../models/Post");
+const googleService = require("../services/googleService");
 
 module.exports = {
   getProfile: async (req, res) => {
     try {
       const posts = await Post.find({ user: req.user.id });
-      res.render("profile.ejs", { posts: posts, user: req.user });
+      
+      res.render("profile.ejs", { 
+        posts: posts, 
+        user: req.user
+      });
     } catch (err) {
       console.log(err);
     }
@@ -136,5 +141,117 @@ module.exports = {
       console.log(err);
       res.redirect(`/post/${req.params.id}`);
     }
-  }
+  },
+  getImportStatus: async (req, res) => {
+    try {
+      // Return information about available sheets and import requirements
+      return res.json({
+        success: true,
+        availableSheets: {
+          "App-Test-4": 4
+        },
+        requiredColumns: [
+          "Box #",
+          "Toy #",
+          "Model Name",
+          "Origin",
+          "Series",
+          "Wheel Variations",
+          "Front Image",
+          "Back Image"
+        ],
+        defaultSheetIndex: 4
+      });
+    } catch (error) {
+      console.error("Error getting import status:", error);
+      return res.status(500).json({
+        success: false,
+        error: "Failed to get import status",
+        details: error.message
+      });
+    }
+  },
+  importFromGoogleSheet: async (req, res) => {
+    try {
+      let posts = [];
+      const sheetIndex = req.body.sheetIndex || 4; // Default to App-Test-4 sheet
+      
+      console.log(`Starting import from sheet index: ${sheetIndex}`);
+      
+      // Import from sheet
+      try {
+        posts = await googleService.importSheet(sheetIndex);
+        console.log(`Successfully fetched ${posts.length} posts from sheet`);
+        console.log('First post data:', JSON.stringify(posts[0], null, 2));
+      } catch (error) {
+        console.error('Error fetching from sheet:', error);
+        return res.status(500).json({
+          success: false,
+          error: "Failed to import from sheet",
+          details: error.message
+        });
+      }
+      
+      // Create posts in the database
+      const createdPosts = [];
+      const errors = [];
+
+      console.log(`Attempting to create ${posts.length} posts in database`);
+
+      for (const postData of posts) {
+        try {
+          // Add the user ID to each post
+          postData.user = req.user.id;
+
+          // Extract Cloudinary IDs from URLs
+          if (postData.frontImage && postData.frontImage.includes('cloudinary.com')) {
+            const urlParts = postData.frontImage.split('/');
+            const publicIdWithExt = urlParts[urlParts.length - 1];
+            postData.frontImageCloudinaryId = publicIdWithExt.split('.')[0];
+          } else {
+            throw new Error('Front image must be a Cloudinary URL');
+          }
+
+          if (postData.backImage && postData.backImage.includes('cloudinary.com')) {
+            const urlParts = postData.backImage.split('/');
+            const publicIdWithExt = urlParts[urlParts.length - 1];
+            postData.backImageCloudinaryId = publicIdWithExt.split('.')[0];
+          } else {
+            throw new Error('Back image must be a Cloudinary URL');
+          }
+          
+          console.log('Creating post with data:', JSON.stringify(postData, null, 2));
+          
+          // Create the post
+          const post = await Post.create(postData);
+          console.log('Successfully created post:', post._id);
+          createdPosts.push(post);
+        } catch (error) {
+          console.error('Error creating post:', error);
+          errors.push({
+            data: postData,
+            error: error.message
+          });
+        }
+      }
+
+      console.log(`Import complete. Created: ${createdPosts.length}, Failed: ${errors.length}`);
+
+      return res.json({
+        success: true,
+        importedCount: createdPosts.length,
+        created: createdPosts,
+        failed: errors.length,
+        errors: errors
+      });
+
+    } catch (error) {
+      console.error("Error importing from Google Sheet:", error);
+      return res.status(500).json({ 
+        success: false,
+        error: "Failed to import from Google Sheet",
+        details: error.message 
+      });
+    }
+  },
 };

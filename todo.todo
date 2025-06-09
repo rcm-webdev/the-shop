@@ -1,6 +1,12 @@
 The Shop: 
     ✔ incorporate tailwindcss @done(25-06-01 15:07)
     ✔ lets create a new page for the shop @started(25-06-01 15:08) @done(25-06-01 15:11) @lasted(3m11s)
+
+    Google Sheets:
+        ✔ create a google sheet service for the shop application @started(25-06-08 16:36) @done(25-06-08 16:56) @lasted(20m16s)
+        ✔ create a route to import the data from the google sheet @done(25-06-08 16:56)
+        ✔ create a import button to import data from the google sheet @done(25-06-08 16:57)
+        
     
 
 

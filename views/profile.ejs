@@ -1,0 +1,184 @@
+<%- include('partials/header') -%>
+<div class="max-w-5xl mx-auto px-4 py-6">
+  <div class="flex flex-col lg:flex-row gap-6">
+    <!-- User Info and Form Section -->
+    <div class="w-full lg:w-2/5">
+      <div class="bg-base-200 rounded-lg shadow-md h-full">
+        <!-- User Info -->
+        <div class="p-6 text-center border-b border-base-300">
+          <div class="avatar placeholder mb-4">
+            <div class="bg-neutral text-neutral-content rounded-full w-24">
+              <span class="text-3xl"><%= user.userName.charAt(0).toUpperCase() %></span>
+            </div>
+          </div>
+          <h2 class="text-xl font-bold mb-2"><%= user.userName %></h2>
+          <p class="text-gray-600 mb-4"><%= user.email %></p>
+          <a href="/logout" class="btn btn-primary btn-sm">Logout</a>
+        </div>
+
+        <!-- New Item Form -->
+        <div class="p-6">
+          <h2 class="text-lg font-bold mb-4">Add New Item</h2>
+          <form action="/post/createPost" enctype="multipart/form-data" method="POST" class="space-y-4">
+            <div>
+              <label for="title" class="block text-sm font-medium mb-1">Title</label>
+              <input type="text" class="input input-bordered w-full" id="title" name="title" required>
+            </div>
+            
+            <div>
+              <label for="caption" class="block text-sm font-medium mb-1">Description</label>
+              <textarea class="textarea textarea-bordered w-full h-24" id="caption" name="caption" required ></textarea>
+            </div>
+
+            <div>
+              <h3 class="text-sm font-medium mb-2">Images</h3>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div class="relative border-2 border-dashed border-gray-300 rounded-lg p-4 text-center cursor-pointer hover:border-primary transition-colors" id="frontImageDropZone">
+                  <input type="file" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" id="frontImage" name="frontImage" accept="image/*" capture="filesystem" required>
+                  <div class="preview-container hidden">
+                    <img id="frontImagePreview" class="max-w-full h-auto mx-auto mb-2" src="" alt="Front preview">
+                    <p class="text-sm text-gray-500">Front View</p>
+                  </div>
+                  <div class="upload-prompt">
+                    <i class="fas fa-plus text-3xl mb-2"></i>
+                    <p class="text-sm text-gray-500">Front View</p>
+                  </div>
+                </div>
+                
+                <div class="relative border-2 border-dashed border-gray-300 rounded-lg p-4 text-center cursor-pointer hover:border-primary transition-colors" id="backImageDropZone">
+                  <input type="file" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" id="backImage" name="backImage" accept="image/*" capture="filesystem" required>
+                  <div class="preview-container hidden">
+                    <img id="backImagePreview" class="max-w-full h-auto mx-auto mb-2" src="" alt="Back preview">
+                    <p class="text-sm text-gray-500">Back View</p>
+                  </div>
+                  <div class="upload-prompt">
+                    <i class="fas fa-plus text-3xl mb-2"></i>
+                    <p class="text-sm text-gray-500">Back View</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <label for="tags" class="block text-sm font-medium mb-1">Tags</label>
+              <input type="text" class="input input-bordered w-full" id="tags" name="tags" 
+                     placeholder="e.g. 1997, Near Mint, Redline Wheels">
+              <p class="text-xs text-gray-500 mt-1">Separate tags with commas</p>
+            </div>
+
+            <button type="submit" class="btn btn-primary w-full">Add to Collection</button>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- Collection Grid Section -->
+    <div class="w-full lg:w-3/5">
+      <div class="bg-base-200 rounded-lg shadow-md p-6 h-full flex flex-col">
+        <div class="flex justify-between items-center mb-6">
+          <h2 class="text-lg font-bold ">Your Collection</h2>
+          <a href="/feed" class="btn btn-ghost btn-sm ">View All</a>
+        </div>
+        
+        <div class="flex-1">
+          <div class="grid grid-cols-2 sm:grid-cols-3 gap-4">
+            <% for(let i=0; i<posts.length; i++) {%>
+              <div class="card bg-base-100 shadow-sm hover:shadow-md transition-shadow">
+                <a href="/post/<%= posts[i]._id%>" class="block">
+                  <figure class="aspect-square">
+                    <img class="w-full h-full object-cover" src="<%= posts[i].frontImage%>" alt="Item image">
+                  </figure>
+                  <div class="card-body p-2">
+                    <h3 class="card-title text-sm font-medium line-clamp-1 "><%= posts[i].title %></h3>
+                    <% if (posts[i].tags && posts[i].tags.length > 0) { %>
+                      <div class="flex flex-wrap gap-1">
+                        <% posts[i].tags.slice(0, 2).forEach(function(tag) { %>
+                          <a href="/feed?tag=<%= tag %>" class="badge badge-sm badge-secondary hover:badge-primary transition-colors text-xs"><%= tag %></a>
+                        <% }); %>
+                        <% if (posts[i].tags.length > 2) { %>
+                          <span class="badge badge-sm badge-ghost text-xs">+<%= posts[i].tags.length - 2 %></span>
+                        <% } %>
+                      </div>
+                    <% } %>
+                  </div>
+                </a>
+              </div>
+            <% } %>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<%- include('partials/footer') -%>
+<script>
+  function handleImageUpload(input, previewId, dropZoneId) {
+    const previewContainer = document.querySelector(`#${dropZoneId} .preview-container`);
+    const uploadPrompt = document.querySelector(`#${dropZoneId} .upload-prompt`);
+    const preview = document.getElementById(previewId);
+    
+    if (!previewContainer || !uploadPrompt || !preview) {
+      console.error('Required elements not found:', { previewContainer, uploadPrompt, preview });
+      return;
+    }
+
+    if (input.files && input.files[0]) {
+      const reader = new FileReader();
+      
+      reader.onload = function(e) {
+        if (e.target && e.target.result) {
+          preview.src = e.target.result;
+          preview.style.display = 'block'; // Ensure image is visible
+          previewContainer.classList.remove('hidden');
+          uploadPrompt.classList.add('hidden');
+          console.log('Preview updated successfully:', previewId);
+        } else {
+          console.error('Failed to load image data');
+        }
+      }
+      
+      reader.onerror = function(error) {
+        console.error('Error reading file:', error);
+      }
+      
+      reader.readAsDataURL(input.files[0]);
+    } else {
+      console.log('No file selected');
+    }
+  }
+
+  // Set up image handling
+  document.getElementById('frontImage').addEventListener('change', function() {
+    handleImageUpload(this, 'frontImagePreview', 'frontImageDropZone');
+  });
+
+  document.getElementById('backImage').addEventListener('change', function() {
+    handleImageUpload(this, 'backImagePreview', 'backImageDropZone');
+  });
+
+  // Prevent default drag behaviors
+  ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+    document.getElementById('frontImageDropZone').addEventListener(eventName, preventDefaults, false);
+    document.getElementById('backImageDropZone').addEventListener(eventName, preventDefaults, false);
+  });
+
+  function preventDefaults (e) {
+    e.preventDefault();
+    e.stopPropagation();
+  }
+
+  // Handle dropped files
+  document.getElementById('frontImageDropZone').addEventListener('drop', function(e) {
+    const dt = e.dataTransfer;
+    const files = dt.files;
+    document.getElementById('frontImage').files = files;
+    handleImageUpload(document.getElementById('frontImage'), 'frontImagePreview', 'frontImageDropZone');
+  });
+
+  document.getElementById('backImageDropZone').addEventListener('drop', function(e) {
+    const dt = e.dataTransfer;
+    const files = dt.files;
+    document.getElementById('backImage').files = files;
+    handleImageUpload(document.getElementById('backImage'), 'backImagePreview', 'backImageDropZone');
+  });
+</script>

@@ -1,0 +1,26 @@
+# Node modules 
+node_modules
+
+# Editor config
+.vscode/
+.cursor/
+.idea/
+
+# Secrets and credentials
+.env
+credentials.json
+google_vision_key.json
+
+# macOS clutter
+.DS_Store
+
+# Python virtual environment
+venv/
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+
+# Logs and generated CSVs
+*.log
+*.csv

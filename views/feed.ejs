@@ -1,0 +1,36 @@
+<%- include('partials/header') -%>
+  <div class="max-w-7xl mx-auto px-4">
+    <div class="py-8">
+      <% if (locals.selectedTag) { %>
+        <div class="text-center mb-8">
+          <h3 class="text-2xl font-bold mb-4">Showing posts tagged with: <%= selectedTag %></h3>
+          <a href="/feed" class="btn btn-secondary">Clear Filter</a>
+        </div>
+      <% } %>
+      
+      <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+        <% for(var i=0; i<posts.length; i++) {%>
+          <div class="w-full">
+            <a href="/post/<%= posts[i]._id%>" class="block">
+              <div class="card bg-base-100 shadow-xl hover:shadow-2xl transition-shadow h-full">
+                <figure class="aspect-square overflow-hidden">
+                  <img class="w-full h-full object-cover" src="<%= posts[i].frontImage%>" alt="Hot Wheels front view">
+                </figure>
+                <div class="card-body p-3">
+                  <h5 class="card-title text-sm font-medium line-clamp-1"><%= posts[i].title %></h5>
+                  <% if (posts[i].tags && posts[i].tags.length > 0) { %>
+                    <div class="flex flex-wrap gap-1 mt-1">
+                      <% posts[i].tags.forEach(function(tag) { %>
+                        <a href="/feed?tag=<%= tag %>" class="badge badge-sm badge-secondary hover:badge-primary transition-colors text-xs"><%= tag %></a>
+                      <% }); %>
+                    </div>
+                  <% } %>
+                </div>
+              </div>
+            </a>
+          </div>
+        <% } %>
+      </div>
+    </div>
+  </div>  
+<%- include('partials/footer') -%>

@@ -7,23 +7,23 @@ from google.oauth2.service_account import Credentials
 from googleapiclient.discovery import build
 from datetime import datetime
 
-# Toggle for testing mode
+# Toggle to prevent deletion of source images during testing
 TESTING_MODE = True
 
 # Configuration paths
 os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "google_vision_key.json"
 WATCH_FOLDER = "/Users/ikeyike/Library/CloudStorage/GoogleDrive-thetrueepg@gmail.com/My Drive/TheShopRawUploads"
-OUTPUT_FOLDER = "/Users/ikeyike/Desktop/the_shop_inventory/organized_images!"
+OUTPUT_FOLDER = "/Users/ikeyike/Desktop/the_shop_inventory/organized_images"
 UNMATCHED_FOLDER = "/Users/ikeyike/Desktop/the_shop_inventory/unmatched"
-LOG_FILE = "/Users/ikeyike/Desktop/the_shop_inventory/processed_images!.csv"
+LOG_FILE = "/Users/ikeyike/Desktop/the_shop_inventory/processed_images.csv"
 
 # Google Sheets configuration
 SCOPES = ['https://www.googleapis.com/auth/spreadsheets']
 CREDENTIALS_FILE = 'credentials.json'
 SPREADSHEET_ID = '135derlsER5TZEdZ7kEIJQQ1G1Z6thpZfydFsnqkb9EM'
-SHEET_NAME = 'Inventory'
-TOY_COLUMN = 'A'
-VARIANT_COLUMN = 'J'
+SHEET_NAME = 'Inventory-Adds'
+TOY_COLUMN = 'B'
+VARIANT_COLUMN = 'G'
 
 # Google Vision Client
 client = vision.ImageAnnotatorClient()
@@ -192,6 +192,12 @@ def process_batch(images, sheets_service):
                     shutil.copy(img_path, dest_path)
                 else:
                     shutil.move(img_path, dest_path)
+                    if img_path.lower().endswith('.jpg') and os.path.exists(img_path):
+                        try:
+                            os.remove(img_path)
+                            print(f"🧹 Deleted processed JPG from Drive: {img_path}")
+                        except Exception as e:
+                            print(f"⚠️ Failed to delete JPG from Drive: {e}")
                 log_processed_image(dest_path, original_name, identifier, "Processed")
             except Exception as e:
                 print(f"⚠️ Error moving {img_path}: {e}")
@@ -213,7 +219,7 @@ def process_batch(images, sheets_service):
 def process_images(sheets_service):
     files = sorted([
         os.path.join(WATCH_FOLDER, f) for f in os.listdir(WATCH_FOLDER)
-        if f.lower().endswith(('.jpg', '.jpeg', '.png', '.heic')) and not f.startswith('.') and f.lower() != "icon"
+        if f.lower().endswith('.heic') and not f.startswith('.') and f.lower() != "icon"
     ])
     for i in range(0, len(files), 2):
         batch = files[i:i + 2]

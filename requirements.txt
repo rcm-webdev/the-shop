@@ -1,3 +1,5 @@
+# 📌 Requires Python >= 3.11
+
 # 🔧 Core Utilities
 requests==2.32.3
 python-dotenv==1.1.0
@@ -15,8 +17,15 @@ google-api-python-client==2.86.0
 requests-oauthlib==2.0.0
 oauthlib==3.2.2
 
-# 🧠 Optional: Google Cloud Vision (not currently active but ready)
+# 🧠 Google Cloud Vision
 google-cloud-vision==3.3.0
 
-# 🖼️ Optional: Image Processing (future compatibility)
+# 🖼️ Image Processing
 Pillow==9.4.0
+opencv-python==4.9.0.80  # <-- Required for image splitting and scanning
+
+# 🧪 Optional (for fuzzy string matching in wiki_catalog_scraper.py)
+# This is part of the standard library (`difflib`), so no extra package is needed.
+
+# 🧹 Cleanup & Formatting Tools (Optional if you want consistency in formatting)
+# black==24.3.0

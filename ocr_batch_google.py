@@ -6,24 +6,28 @@ from google.cloud import vision
 from google.oauth2.service_account import Credentials
 from googleapiclient.discovery import build
 from datetime import datetime
+from dotenv import load_dotenv
+
+# Load environment variables
+load_dotenv()
 
 # Toggle to prevent deletion of source images during testing
 TESTING_MODE = True
 
-# Configuration paths
-os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "google_vision_key.json"
-WATCH_FOLDER = "/Users/ikeyike/Library/CloudStorage/GoogleDrive-thetrueepg@gmail.com/My Drive/TheShopRawUploads"
-OUTPUT_FOLDER = "/Users/ikeyike/Desktop/the_shop_inventory/organized_images"
-UNMATCHED_FOLDER = "/Users/ikeyike/Desktop/the_shop_inventory/unmatched"
-LOG_FILE = "/Users/ikeyike/Desktop/the_shop_inventory/processed_images.csv"
+# Configuration paths from .env
+os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = os.getenv("GOOGLE_VISION_KEY_PATH")
+RAW_FOLDER = os.getenv("RAW_FOLDER")
+ORG_FOLDER = os.getenv("ORG_FOLDER")
+UNMATCHED_FOLDER = os.getenv("UNMATCHED_FOLDER")
+LOG_FILE = os.getenv("LOG_FILE")
 
 # Google Sheets configuration
 SCOPES = ['https://www.googleapis.com/auth/spreadsheets']
-CREDENTIALS_FILE = 'credentials.json'
-SPREADSHEET_ID = '135derlsER5TZEdZ7kEIJQQ1G1Z6thpZfydFsnqkb9EM'
-SHEET_NAME = 'Inventory-Adds'
-TOY_COLUMN = 'B'
-VARIANT_COLUMN = 'G'
+CREDENTIALS_FILE = os.getenv("GOOGLE_SHEETS_KEY_PATH")
+SPREADSHEET_ID = os.getenv("SPREADSHEET_ID")
+WORKSHEET_NAME = os.getenv("WORKSHEET_NAME", "Inventory-Adds")
+TOY_COLUMN = os.getenv("TOY_COLUMN", "B")
+VARIANT_COLUMN = os.getenv("VARIANT_COLUMN", "G")
 
 # Google Vision Client
 client = vision.ImageAnnotatorClient()
@@ -60,6 +64,25 @@ def convert_heic_to_jpg(image_path):
 
     return None
 
+# --- Preprocessing for OCR ---
+def preprocess_image_for_ocr(image_path):
+    try:
+        image = cv2.imread(image_path)
+        gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+        
+        # Apply bilateral filter (reduces noise but keeps edges)
+        filtered = cv2.bilateralFilter(gray, 11, 17, 17)
+
+        # Apply adaptive threshold to highlight text
+        enhanced = cv2.adaptiveThreshold(filtered, 255, cv2.ADAPTIVE_THRESH_MEAN_C,
+                                         cv2.THRESH_BINARY_INV, 11, 2)
+
+        temp_path = image_path.replace(".jpg", "_pre.jpg")
+        cv2.imwrite(temp_path, enhanced)
+        return temp_path
+    except Exception as e:
+        print(f"⚠️ Failed to preprocess image: {e}")
+        return image_path
 # --- Logging ---
 def ensure_log_headers():
     if not os.path.exists(LOG_FILE) or os.path.getsize(LOG_FILE) == 0:
@@ -85,28 +108,25 @@ def is_duplicate(identifier):
 
 # --- OCR Extraction Logic ---
 def extract_toy_number(text):
-    text = re.sub(r"Asst\.\s*[A-Z0-9]{4,7}", "", text, flags=re.IGNORECASE)
+    # Remove lines with "Asst." numbers — they are misleading
+    cleaned_text = re.sub(r"Asst\.?\s*[:#]?\s*[A-Z0-9]{4,7}[^\n,]*", "", text, flags=re.IGNORECASE)
 
-    match_with_dash = re.search(r"\b([A-Z]{1,2}[0-9]{4,5})-([A-Z0-9]{3,6})\b", text, re.IGNORECASE)
+    # Look for M6916-0918K-style patterns first
+    match_with_dash = re.search(r"\b([A-Z]{1,2}[0-9]{4,5})-([A-Z0-9]{3,6})\b", cleaned_text, re.IGNORECASE)
     if match_with_dash:
-        return match_with_dash.group(1).upper()
+        toy_num = match_with_dash.group(1).upper()
+        print(f"✅ Matched Toy #: {toy_num}")
+        return toy_num
 
-    all_matches = re.findall(r"\b[A-Z]{1,2}[0-9]{4,5}\b|\b[0-9]{5,6}\b", text.upper())
-
-    for match in all_matches:
-        if re.fullmatch(r"[A-Z]{1,2}[0-9]{4,5}", match):
-            return match
-
-    for match in all_matches:
-        if re.fullmatch(r"[0-9]{5,6}", match):
-            return match
-
+    # No match found
+    print("⚠️ No Toy # found in OCR text.")
     return None
 
 # --- Google OCR Integration ---
 def ocr_google(image_path):
+    preprocessed_path = preprocess_image_for_ocr(image_path)
     try:
-        with open(image_path, "rb") as img_file:
+        with open(preprocessed_path, "rb") as img_file:
             content = img_file.read()
         image = vision.Image(content=content)
         response = client.text_detection(image=image)
@@ -120,13 +140,17 @@ def ocr_google(image_path):
                 return toy_number
             else:
                 print("⚠️ OCR found text, but no Toy # matched.")
-                return None
         else:
             print("❌ No text detected by OCR.")
     except Exception as e:
         print(f"❌ OCR Error: {e}")
+    finally:
+        if os.path.exists(preprocessed_path):
+            try:
+                os.remove(preprocessed_path)
+            except Exception as e:
+                print(f"⚠️ Failed to delete temp file: {e}")
     return None
-
 # --- Google Sheets ---
 def authenticate_google_sheets():
     try:
@@ -142,7 +166,7 @@ def get_variant_from_sheet(sheets_service, toy_number):
         sheet = sheets_service.spreadsheets()
         result = sheet.values().get(
             spreadsheetId=SPREADSHEET_ID,
-            range=f"{SHEET_NAME}!{TOY_COLUMN}:{VARIANT_COLUMN}"
+            range=f"'{WORKSHEET_NAME}'!{TOY_COLUMN}:{VARIANT_COLUMN}"
         ).execute()
         values = result.get('values', [])
         for row in values:
@@ -179,7 +203,7 @@ def process_batch(images, sheets_service):
 
         variant = get_variant_from_sheet(sheets_service, toy_number)
         identifier = toy_number
-        target_folder = os.path.join(OUTPUT_FOLDER, identifier)
+        target_folder = os.path.join(ORG_FOLDER, identifier)
         os.makedirs(target_folder, exist_ok=True)
 
         for i, img_path in enumerate([front_image, back_image]):
@@ -213,12 +237,13 @@ def process_batch(images, sheets_service):
                 else:
                     shutil.move(img, unmatched_dest)
                 log_processed_image(unmatched_dest, original_name, "Unknown", "Unmatched")
+                print(f"📁 Moved unmatched: {original_name} → {unmatched_dest}")
             except Exception as e:
                 print(f"⚠️ Error moving unmatched: {e}")
 
 def process_images(sheets_service):
     files = sorted([
-        os.path.join(WATCH_FOLDER, f) for f in os.listdir(WATCH_FOLDER)
+        os.path.join(RAW_FOLDER, f) for f in os.listdir(RAW_FOLDER)
         if f.lower().endswith('.heic') and not f.startswith('.') and f.lower() != "icon"
     ])
     for i in range(0, len(files), 2):
@@ -229,7 +254,7 @@ def process_images(sheets_service):
 def main():
     print("🔍 Starting OCR Batch Processor (Google Vision only)...")
     os.makedirs(UNMATCHED_FOLDER, exist_ok=True)
-    os.makedirs(OUTPUT_FOLDER, exist_ok=True)
+    os.makedirs(ORG_FOLDER, exist_ok=True)
     sheets_service = authenticate_google_sheets()
     if sheets_service:
         process_images(sheets_service)

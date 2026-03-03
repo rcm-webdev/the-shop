@@ -14,7 +14,7 @@ from gspread.utils import rowcol_to_a1
 GOOGLE_SHEET_NAME = "Hot Wheels and Matchbox Inventory"
 SHEET_TAB_NAME = "Test"
 LOG_FILE = "wiki_scraper_log.csv"
-CONSTANT_COLUMNS = ["Box #", "Toy #", "Quantity", "Model Name", "Brand", "Origin", "Extra"]
+CONSTANT_COLUMNS = ["Box #", "Toy #", "Quantity", "Model Name", "Variant", "Brand", "Origin", "Extra", "✔ Processed"]
 DESIRED_KEYS = [
     "Year", "Toy #", "Col #", "Series", "Series #", "Color",
     "Body Color", "Base Color/Type", "Country",
@@ -88,11 +88,11 @@ def combine_variants(rows):
 
 def build_wiki_url(model_name, brand):
     base_url = "https://hotwheels.fandom.com/wiki/" if brand.lower() == "hot wheels" else "https://matchbox.fandom.com/wiki/"
-    model_cleaned = model_name.replace("’", "'").split(" (")[0].replace(" ", "_")
+    model_cleaned = model_name.replace("’", "'").replace(" ", "_")
     encoded_name = quote(model_cleaned, safe="_()")
     return base_url + encoded_name
 
-def get_wiki_versions(toy_number, model, brand, year):
+def get_wiki_versions(toy_number, model, brand, year, variant_filter=""):
     url = build_wiki_url(model, brand)
     print(f"🔍 Fetching: {url}")
     try:
@@ -106,6 +106,17 @@ def get_wiki_versions(toy_number, model, brand, year):
         if not matched_rows:
             print(f"⚠️ No match for Toy #: {toy_number}")
             return None, url
+
+        if variant_filter:
+            filtered_rows = []
+            for row in matched_rows:
+                row_text = " ".join(val.lower() for val in row.values())
+                if variant_filter in row_text:
+                    filtered_rows.append(row)
+            if filtered_rows:
+                matched_rows = filtered_rows
+            else:
+                print(f"⚠️ No variant match for '{variant_filter}', using all variants.")
 
         combined = combine_variants(matched_rows)
         return combined, url
@@ -123,22 +134,32 @@ def main():
     header_row = sheet.row_values(1)
     header_index = {col: i for i, col in enumerate(header_row)}
 
+    if "✔ Processed" not in header_index:
+        sheet.update_cell(1, len(header_row) + 1, "✔ Processed")
+        header_row.append("✔ Processed")
+        header_index["✔ Processed"] = len(header_row) - 1
+
     with open(LOG_FILE, "w", newline="", encoding="utf-8") as f:
         writer = csv.writer(f)
         writer.writerow(["Row", "Model Name", "Toy #", "Status", "Wiki URL"])
+        print("Header Row:", header_row)
 
-    records = sheet.get_all_records()
+    records = sheet.get_all_records(expected_headers=header_row)
 
     for idx, row in enumerate(records, start=2):
+        if row.get("✔ Processed", "").strip() == "✔":
+            continue
         if not row.get("Toy #") or not row.get("Model Name"):
             continue
+
         toy_num = row["Toy #"]
         model_name = row["Model Name"]
         brand = row.get("Brand", "Hot Wheels")
         year = row.get("Year", "")
+        variant = str(row.get("Variant", "")).strip().lower()
         print(f"🔍 Row {idx}: {model_name} → {toy_num}")
 
-        updates, page_url = get_wiki_versions(toy_num, model_name, brand, year)
+        updates, page_url = get_wiki_versions(toy_num, model_name, brand, year, variant)
         if not updates:
             log_to_csv(idx, model_name, toy_num, "No Data", page_url)
             continue
@@ -160,6 +181,8 @@ def main():
                 continue
             if col in header_index:
                 full_row[header_index[col]] = val
+
+        full_row[header_index["✔ Processed"]] = "✔"
 
         range_label = f"A{idx}:{rowcol_to_a1(idx, len(header_row))}"
         print(f"✅ Updating Row {idx}: {updates}")

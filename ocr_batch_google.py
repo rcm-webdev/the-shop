@@ -11,17 +11,16 @@ from dotenv import load_dotenv
 # Load environment variables
 load_dotenv()
 
-# Toggle to prevent deletion of source images during testing
 TESTING_MODE = True
 
-# Configuration paths from .env
+# Paths from .env
 os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = os.getenv("GOOGLE_VISION_KEY_PATH")
 RAW_FOLDER = os.getenv("RAW_FOLDER")
 ORG_FOLDER = os.getenv("ORG_FOLDER")
 UNMATCHED_FOLDER = os.getenv("UNMATCHED_FOLDER")
 LOG_FILE = os.getenv("LOG_FILE")
 
-# Google Sheets configuration
+# Google Sheets config
 SCOPES = ['https://www.googleapis.com/auth/spreadsheets']
 CREDENTIALS_FILE = os.getenv("GOOGLE_SHEETS_KEY_PATH")
 SPREADSHEET_ID = os.getenv("SPREADSHEET_ID")
@@ -30,14 +29,12 @@ TOY_COLUMN = os.getenv("TOY_COLUMN", "B")
 VARIANT_COLUMN = os.getenv("VARIANT_COLUMN", "G")
 BOX_COLUMN = os.getenv("BOX_COLUMN", "A")
 
-# Google Vision Client
 client = vision.ImageAnnotatorClient()
 
 # --- Image Conversion ---
 def convert_heic_to_jpg(image_path):
     if not image_path.lower().endswith('.heic'):
         return image_path
-
     jpg_path = image_path.rsplit('.', 1)[0] + '.jpg'
     try:
         os.system(f'sips -s format jpeg "{image_path}" --out "{jpg_path}" >/dev/null 2>&1')
@@ -46,11 +43,8 @@ def convert_heic_to_jpg(image_path):
             if img is not None and img.size > 0:
                 print(f"🌀 Converted HEIC to JPG: {jpg_path}")
                 if not TESTING_MODE:
-                    try:
-                        os.remove(image_path)
-                        print(f"🧹 Deleted original HEIC: {image_path}")
-                    except Exception as e:
-                        print(f"⚠️ Failed to delete HEIC: {e}")
+                    os.remove(image_path)
+                    print(f"🧹 Deleted original HEIC: {image_path}")
                 return jpg_path
             else:
                 print(f"❌ Conversion created unreadable JPG: {jpg_path}")
@@ -60,7 +54,7 @@ def convert_heic_to_jpg(image_path):
         print(f"⚠️ Error during HEIC to JPG conversion: {e}")
     return None
 
-# --- Preprocessing for OCR ---
+# --- OCR Preprocessing ---
 def preprocess_image_for_ocr(image_path):
     try:
         image = cv2.imread(image_path)
@@ -91,24 +85,34 @@ def is_duplicate(identifier, box_number):
         with open(LOG_FILE, "r") as log_file:
             for line in log_file:
                 parts = line.strip().split(',')
-                if len(parts) >= 6 and parts[3] == identifier and parts[5] == box_number and parts[4].startswith("Processed"):
-                    return True
+                if len(parts) >= 6:
+                    logged_identifier = parts[3].strip().upper()
+                    logged_status = parts[4].strip()
+                    logged_box = parts[5].strip()
+                    if (
+                        logged_identifier == identifier.strip().upper()
+                        and logged_box == box_number.strip()
+                        and logged_status == "Processed"
+                    ):
+                        return True
     except FileNotFoundError:
         open(LOG_FILE, "a").close()
     return False
 
-# --- OCR Extraction Logic ---
+# --- OCR ---
 def extract_toy_number(text):
     cleaned_text = re.sub(r"Asst\.?\s*[:#]?\s*[A-Z0-9]{4,7}[^\n,]*", "", text, flags=re.IGNORECASE)
-    match_with_dash = re.search(r"\b([A-Z]{1,2}[0-9]{4,5})-([A-Z0-9]{3,6})\b", cleaned_text, re.IGNORECASE)
-    if match_with_dash:
-        toy_num = match_with_dash.group(1).upper()
-        print(f"✅ Matched Toy #: {toy_num}")
-        return toy_num
+    match = re.search(r"\b([A-Z0-9]{5,6})[-.][A-Z0-9]{3,7}", cleaned_text, re.IGNORECASE)
+    if match:
+        prefix = match.group(1).upper()
+        if prefix.isdigit() and len(prefix) == 4:
+            print(f"⚠️ Ignored match: {prefix} (starts with 4 digits)")
+            return None
+        print(f"✅ Matched Toy #: {prefix}")
+        return prefix
     print("⚠️ No Toy # found in OCR text.")
     return None
 
-# --- Google OCR Integration ---
 def ocr_google(image_path):
     preprocessed_path = preprocess_image_for_ocr(image_path)
     try:
@@ -149,12 +153,12 @@ def authenticate_google_sheets():
 def get_box_number_from_sheet(sheets_service, toy_number):
     try:
         sheet = sheets_service.spreadsheets()
-        range_str = f"'{WORKSHEET_NAME}'!{BOX_COLUMN}:{VARIANT_COLUMN}"
+        range_str = f"'{WORKSHEET_NAME}'!{BOX_COLUMN}:{TOY_COLUMN}"
         result = sheet.values().get(spreadsheetId=SPREADSHEET_ID, range=range_str).execute()
         values = result.get('values', [])
-        for row in values:
-            if row and len(row) >= 2 and row[1] == toy_number:
-                return row[0] if len(row) > 0 else ""
+        matches = [row for row in values if len(row) >= 2 and row[1].strip().upper() == toy_number.strip().upper()]
+        if matches:
+            return matches[-1][0].strip()  # Latest box number match wins
     except Exception as e:
         print(f"⚠️ Box # lookup error: {e}")
     return ""
@@ -165,81 +169,71 @@ def get_variant_from_sheet(sheets_service, toy_number):
         result = sheet.values().get(spreadsheetId=SPREADSHEET_ID, range=f"'{WORKSHEET_NAME}'!{TOY_COLUMN}:{VARIANT_COLUMN}").execute()
         values = result.get('values', [])
         for row in values:
-            if row and len(row) >= 10 and row[0] == toy_number:
+            if row and len(row) >= 10 and row[0].strip().upper() == toy_number.strip().upper():
                 return row[9].strip() if row[9] else ""
     except Exception as e:
         print(f"⚠️ Sheets access error: {e}")
     return ""
 
-# --- Main Logic ---
+# --- Processing Logic ---
 def process_batch(images, sheets_service):
-    print(f"📸 Processing batch: {images}")
     if len(images) != 2:
-        print(f"⚠️ Incomplete batch detected: {images}")
+        print(f"⚠️ Incomplete batch: {images}")
         return
-    front_image, back_image = images
-    front_image = convert_heic_to_jpg(front_image)
-    back_image = convert_heic_to_jpg(back_image)
-    front_original_name = os.path.basename(front_image)
-    back_original_name = os.path.basename(back_image)
-    print("🔍 Using Google Vision OCR...")
+
+    front_image, back_image = [convert_heic_to_jpg(img) for img in images]
+    front_name, back_name = map(os.path.basename, [front_image, back_image])
+
     toy_number = ocr_google(back_image)
-    if toy_number:
-        box_number = get_box_number_from_sheet(sheets_service, toy_number)
-        if is_duplicate(toy_number, box_number):
-            print(f"⚠️ Duplicate: {toy_number} in Box {box_number}")
-            return
-        variant = get_variant_from_sheet(sheets_service, toy_number)
-        identifier = toy_number
-        target_folder = os.path.join(ORG_FOLDER, identifier)
-        os.makedirs(target_folder, exist_ok=True)
-        for i, img_path in enumerate([front_image, back_image]):
-            original_name = os.path.basename(img_path)
-            new_name = f"{identifier}_{i + 1}.jpg"
-            dest_path = os.path.join(target_folder, new_name)
-            print(f"✅ Moving {img_path} to {dest_path}")
-            try:
-                if TESTING_MODE:
-                    shutil.copy(img_path, dest_path)
-                else:
-                    shutil.move(img_path, dest_path)
-                    if img_path.lower().endswith('.jpg') and os.path.exists(img_path):
-                        try:
-                            os.remove(img_path)
-                            print(f"🧹 Deleted processed JPG from Drive: {img_path}")
-                        except Exception as e:
-                            print(f"⚠️ Failed to delete JPG from Drive: {e}")
-                log_processed_image(dest_path, original_name, identifier, "Processed", box_number)
-            except Exception as e:
-                print(f"⚠️ Error moving {img_path}: {e}")
-                log_processed_image(img_path, original_name, "Unknown", "Error", box_number)
-    else:
-        print("❌ Google OCR failed.")
+    if not toy_number:
         for img in [front_image, back_image]:
-            original_name = os.path.basename(img)
-            unmatched_dest = os.path.join(UNMATCHED_FOLDER, original_name)
-            try:
-                if TESTING_MODE:
-                    shutil.copy(img, unmatched_dest)
-                else:
-                    shutil.move(img, unmatched_dest)
-                log_processed_image(unmatched_dest, original_name, "Unknown", "Unmatched", "")
-                print(f"📁 Moved unmatched: {original_name} → {unmatched_dest}")
-            except Exception as e:
-                print(f"⚠️ Error moving unmatched: {e}")
+            dest = os.path.join(UNMATCHED_FOLDER, os.path.basename(img))
+            if TESTING_MODE:
+                shutil.copy(img, dest)
+            else:
+                shutil.move(img, dest)
+            log_processed_image(dest, os.path.basename(img), "Unknown", "Unmatched", "")
+        return
+
+    box_number = get_box_number_from_sheet(sheets_service, toy_number)
+    if not box_number:
+        print(f"❌ No Box # found for {toy_number}")
+        for img in [front_image, back_image]:
+            dest = os.path.join(UNMATCHED_FOLDER, os.path.basename(img))
+            if TESTING_MODE:
+                shutil.copy(img, dest)
+            else:
+                shutil.move(img, dest)
+            log_processed_image(dest, os.path.basename(img), toy_number, "Unmatched", "")
+        return
+
+    print(f"📦 Matched Box #: {box_number} for {toy_number}")
+    if is_duplicate(toy_number, box_number):
+        print(f"⚠️ Duplicate found — already processed: {toy_number} in Box {box_number}")
+        return
+
+    variant = get_variant_from_sheet(sheets_service, toy_number)
+    target_folder = os.path.join(ORG_FOLDER, toy_number)
+    os.makedirs(target_folder, exist_ok=True)
+
+    for i, img_path in enumerate([front_image, back_image]):
+        new_name = f"{toy_number}_{i + 1}.jpg"
+        dest_path = os.path.join(target_folder, new_name)
+        if TESTING_MODE:
+            shutil.copy(img_path, dest_path)
+        else:
+            shutil.move(img_path, dest_path)
+        log_processed_image(dest_path, os.path.basename(img_path), toy_number, "Processed", box_number)
+        print(f"✅ Moved {img_path} → {dest_path}")
 
 def process_images(sheets_service):
     files = sorted([
         os.path.join(RAW_FOLDER, f) for f in os.listdir(RAW_FOLDER)
-        if f.lower().endswith('.heic') and not f.startswith('.') and f.lower() != "icon"
+        if f.lower().endswith(('.heic', '.jpg', '.jpeg')) and not f.startswith('.') and f.lower() != "icon"
     ])
-    for i in range(0, len(files), 2):
-        batch = files[i:i + 2]
-        if len(batch) == 2:
-            process_batch(batch, sheets_service)
 
 def main():
-    print("🔍 Starting OCR Batch Processor (Google Vision only)...")
+    print("🔍 Starting multi_image_renamer.py...")
     os.makedirs(UNMATCHED_FOLDER, exist_ok=True)
     os.makedirs(ORG_FOLDER, exist_ok=True)
     sheets_service = authenticate_google_sheets()

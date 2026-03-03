@@ -1,5 +1,3 @@
-# 📌 Requires Python >= 3.11
-
 # 🔧 Core Utilities
 requests==2.32.3
 python-dotenv==1.1.0
@@ -21,11 +19,12 @@ oauthlib==3.2.2
 google-cloud-vision==3.3.0
 
 # 🖼️ Image Processing
-Pillow==9.4.0
-opencv-python==4.9.0.80  # <-- Required for image splitting and scanning
+Pillow==9.5.0
+opencv-python==4.9.0.80
+numpy==1.26.4  # 👈 Pinned to avoid NumPy 2.x incompatibility with cv2
 
 # 🧪 Optional (for fuzzy string matching in wiki_catalog_scraper.py)
-# This is part of the standard library (`difflib`), so no extra package is needed.
+# Standard library `difflib` used — no package needed
 
 # 🧹 Cleanup & Formatting Tools (Optional if you want consistency in formatting)
 # black==24.3.0
